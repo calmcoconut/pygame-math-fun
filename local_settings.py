@@ -3,7 +3,7 @@ import os
 WINDOWWIDTH = 600
 WINDOWHEIGHT = 600
 TITLE = "MathGame"
-FPS = 60
+FPS = 40
 
 PLAYERMOVESPEED = 6
 
@@ -14,5 +14,6 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 BACKGROUND = (73, 90, 2)
+TEXTCOLOR = WHITE
 
 PATH = os.getcwd()
