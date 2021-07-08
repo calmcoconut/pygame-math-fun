@@ -1,7 +1,8 @@
-import pygame, random, sys, time, os
+import pygame, random, sys, time, os, copy
 from pygame.locals import *
 from local_settings import *
 
+pygame.init()
 mainClock = pygame.time.Clock()
 windowSurface = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
 pygame.display.set_caption(TITLE)
@@ -27,6 +28,8 @@ playerStretchedImage = pygame.transform.scale(playerImage, (40, 40))
 
 userInput = ""
 input_active = False
+answer_result = False
+USER_ENTERED_ANSW = pygame.USEREVENT
 
 
 def drawText(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgColor=None):
@@ -44,39 +47,71 @@ def drawSimpleUI(surface):
     pygame.draw.rect(surface, BLACK, UIANSWERRECT)
 
 
+def drawQuestion(surface, question):
+    drawText(question, font, surface, UIQUESTIONRECT.center)
+
+
+def checkInputAnswer(surface, correctAnswer):
+    global userInput
+    try:
+        if int(userInput) == correctAnswer:
+            userInput = "CORRECT: " + userInput
+            return True
+        else:
+            userInput = "TRY AGAIN: " + userInput
+            return False
+    except Exception:
+        userInput = "TRY AGAIN: " + userInput
+        return False
+
+
 def quitPygame():
     pygame.quit()
     sys.exit()
+
+
+def refreshScreen():
+    pygame.display.update()
+    mainClock.tick(40)
 
 
 while True:
     for event in pygame.event.get():
         if event.type == QUIT and not input_active:
             quitPygame()
-        if input_active and event.type == KEYDOWN:
+        if event.type == KEYDOWN:
             if event.key == K_RETURN:
                 input_active = not input_active
-            elif event.key == pygame.K_BACKSPACE:
+                oldInput = userInput[:]
+                answer_result = checkInputAnswer(windowSurface, 6)
+                pygame.time.set_timer(USER_ENTERED_ANSW, 600)
+        if input_active and event.type == KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:
                 userInput = userInput[:-1]
+            elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                pass
             else:
                 userInput += event.unicode
         if event.type == KEYUP:
-            if event.key == K_ESCAPE:
+            if event.key == K_ESCAPE and not input_active:
                 quitPygame()
-
+            if event.key == K_ESCAPE and input_active:
+                input_active = not input_active
         if event.type == pygame.MOUSEBUTTONUP:
             if not input_active and UIANSWERRECT.collidepoint(event.pos):
                 input_active = not input_active
-        if event.type == K_RETURN:
-            input_active = not input_active
+        if event.type == USER_ENTERED_ANSW:
+            if answer_result:
+                userInput = ""
+            else:
+                userInput = ""
+
         windowSurface.fill(BACKGROUND)
 
         windowSurface.blit(mountainsStretchedImage, backgroundImageMountainsRect)
         windowSurface.blit(forestsStretchedImage, backgroundImageForestsRect)
         windowSurface.blit(playerStretchedImage, playerRect)
         drawSimpleUI(windowSurface)
-        drawText("2 + 2 = ?", font, windowSurface, UIQUESTIONRECT.center)
+        drawQuestion(windowSurface, "2*3=?")
         drawText(userInput, font, windowSurface, UIANSWERRECT.center)
-
-        pygame.display.update()
-        mainClock.tick(40)
+        refreshScreen()
