@@ -12,83 +12,71 @@ backgroundImageMountainsRect = pygame.Rect(0, 0, WINDOWWIDTH, WINDOWHEIGHT // 1.
 backgroundImageMountains = pygame.image.load(os.path.join(PATH, 'img', 'country-platform-back.png'))
 mountainsStretchedImage = pygame.transform.scale(backgroundImageMountains, (WINDOWWIDTH, int(WINDOWHEIGHT // 1.5)))
 backgroundImageForests = pygame.image.load(os.path.join(PATH, 'img', 'country-platform-forest.png'))
-backgroundImageForestsRect = pygame.Rect(0, WINDOWHEIGHT - (WINDOWHEIGHT // 1.5), WINDOWWIDTH,
-                                         backgroundImageForests.get_height())
+backgroundImageForestsRect = pygame.Rect(0, FORESTSTART, WINDOWWIDTH, backgroundImageForests.get_height())
 forestsStretchedImage = pygame.transform.scale(backgroundImageForests, backgroundImageForestsRect.size)
+# start UI
+UISTART = FORESTSTART + backgroundImageForests.get_height()
+UISIZE = (2 / 3 * WINDOWWIDTH, WINDOWHEIGHT - UISTART)
+UILEFT = (WINDOWWIDTH - UISIZE[0]) / 2
+UIQUESTIONRECT = pygame.Rect(UILEFT + 5, UISTART + 5, UISIZE[0] - 10, UISIZE[1] * 1 / 3)
+UIANSWERRECT = pygame.Rect(UILEFT + 5, UISTART + UISTART * 1 / 6, UISIZE[0] - 10, UISIZE[1] * 1 / 3)
 
 playerRect = pygame.Rect(10, 400, 40, 40)  # left, top, width, height
 playerImage = pygame.image.load(os.path.join(PATH, 'img', 'player_simple.png'))
 playerStretchedImage = pygame.transform.scale(playerImage, (40, 40))
 
-moveLeft = moveRight = moveUp = moveDown = False
-text = ""
-input_active = True
+userInput = ""
+input_active = False
 
 
-def drawText(text, font, surface, x, y):
-    textObj = font.render(text, 1, TEXTCOLOR)
-    textrect = textObj.get_rect()
-    textrect.topleft = (x, y)
-    surface.blit(textObj, textrect)
+def drawText(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgColor=None):
+    if textColor is None:
+        textColor = TEXTCOLOR
+    textObj = fontObj.render(text, True, textColor, textBgColor)
+    textRect = textObj.get_rect()
+    textRect.center = centerCoordsTuple
+    surface.blit(textObj, textRect)
+
+
+def drawSimpleUI(surface):
+    pygame.draw.rect(surface, STEELBLUE, ((UILEFT, UISTART), UISIZE))
+    pygame.draw.rect(surface, BLUE, UIQUESTIONRECT)
+    pygame.draw.rect(surface, BLACK, UIANSWERRECT)
+
+
+def quitPygame():
+    pygame.quit()
+    sys.exit()
 
 
 while True:
     for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
+        if event.type == QUIT and not input_active:
+            quitPygame()
         if input_active and event.type == KEYDOWN:
             if event.key == K_RETURN:
                 input_active = not input_active
             elif event.key == pygame.K_BACKSPACE:
-                text = text[:-1]
+                userInput = userInput[:-1]
             else:
-                text += event.unicode
-        if event.type == KEYDOWN:
-            if event.key == K_a:
-                moveRight = False
-                moveLeft = True
-            if event.key == K_d:
-                moveLeft = False
-                moveRight = True
-            if event.key == K_w:
-                moveDown = False
-                moveUp = True
-            if event.key == K_s:
-                moveUp = False
-                moveDown = True
+                userInput += event.unicode
         if event.type == KEYUP:
             if event.key == K_ESCAPE:
-                pygame.quit()
-                sys.exit()
-            if event.key == K_a:
-                moveLeft = False
-            if event.key == K_d:
-                moveRight = False
-            if event.key == K_w:
-                moveUp = False
-            if event.key == K_s:
-                moveDown = False
+                quitPygame()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONUP:
+            if not input_active and UIANSWERRECT.collidepoint(event.pos):
+                input_active = not input_active
+        if event.type == K_RETURN:
             input_active = not input_active
         windowSurface.fill(BACKGROUND)
-
-        # move the player
-        if moveDown and playerRect.bottom < WINDOWHEIGHT:
-            playerRect.top += PLAYERMOVESPEED
-        if moveUp and playerRect.top > 0:
-            playerRect.top -= PLAYERMOVESPEED
-        if moveLeft and playerRect.left > 0:
-            playerRect.left -= PLAYERMOVESPEED
-        if moveRight and playerRect.right < WINDOWWIDTH:
-            playerRect.right += PLAYERMOVESPEED
 
         windowSurface.blit(mountainsStretchedImage, backgroundImageMountainsRect)
         windowSurface.blit(forestsStretchedImage, backgroundImageForestsRect)
         windowSurface.blit(playerStretchedImage, playerRect)
-        drawText("2 + 2 = ?", font, windowSurface, (WINDOWWIDTH/3), (WINDOWHEIGHT/1.3))
-        drawText(text, font, windowSurface, (WINDOWWIDTH/3), (WINDOWHEIGHT/1.1))
+        drawSimpleUI(windowSurface)
+        drawText("2 + 2 = ?", font, windowSurface, UIQUESTIONRECT.center)
+        drawText(userInput, font, windowSurface, UIANSWERRECT.center)
 
         pygame.display.update()
         mainClock.tick(40)
