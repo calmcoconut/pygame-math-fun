@@ -29,7 +29,7 @@ playerStretchedImage = pygame.transform.scale(playerImage, (40, 40))
 userInput = ""
 input_active = False
 answer_result = False
-USER_ENTERED_ANSW = pygame.USEREVENT
+USER_ENTERED_ANSW = pygame.USEREVENT + 1
 
 
 def drawText(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgColor=None):
@@ -84,7 +84,7 @@ while True:
                 input_active = not input_active
                 oldInput = userInput[:]
                 answer_result = checkInputAnswer(windowSurface, 6)
-                pygame.time.set_timer(USER_ENTERED_ANSW, 600)
+                pygame.time.set_timer(USER_ENTERED_ANSW, 600, True) # event, time, once?
         if input_active and event.type == KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 userInput = userInput[:-1]
@@ -103,8 +103,10 @@ while True:
         if event.type == USER_ENTERED_ANSW:
             if answer_result:
                 userInput = ""
+                pygame.event.clear()
+                answer_result = False
             else:
-                userInput = ""
+                userInput = oldInput
 
         windowSurface.fill(BACKGROUND)
 
