@@ -32,15 +32,15 @@ PLAYER_IMAGES = {
     'rabbit': IMAGES_DICT['rabbit']
 }
 
-
 playerRect = pygame.Rect(10, 400, 40, 40)  # left, top, width, height
 playerImage = pygame.image.load(os.path.join(PATH, 'img', 'player_simple.png'))
 playerStretchedImage = pygame.transform.scale(playerImage, (40, 40))
 
 userInput = ""
+oldInput = ""
 input_active = False
-answer_result = False
-USER_ENTERED_ANSW = pygame.USEREVENT + 1
+answerResult = False
+USER_ENTERED_ANSWER = pygame.USEREVENT + 1
 
 
 def drawText(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgColor=None):
@@ -62,7 +62,7 @@ def drawQuestion(surface, question):
     drawText(question, font, surface, UI_QUESTION_RECT.center)
 
 
-def checkInputAnswer(surface, correctAnswer):
+def checkInputAnswer(correctAnswer):
     global userInput
     try:
         if int(userInput) == correctAnswer:
@@ -86,45 +86,76 @@ def refreshScreen():
     mainClock.tick(40)
 
 
+def drawBackground():
+    windowSurface.fill(BACKGROUND)
+    windowSurface.blit(IMAGES_DICT['bg_mountains'], BG_RECT_BACK)
+    windowSurface.blit(IMAGES_DICT['bg_forests'], BG_RECT_FORE)
+
+
+def recordTextInput():
+    global userInput
+    if event.key == pygame.K_BACKSPACE:
+        userInput = userInput[:-1]
+    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+        pass
+    else:
+        userInput += event.unicode
+
+
+def handleAnswer():
+    global input_active, oldInput, answerResult
+    input_active = not input_active
+    oldInput = userInput[:]
+    answerResult = checkInputAnswer(6)
+    pygame.time.set_timer(USER_ENTERED_ANSWER, 600, True)  # event, time, once?
+
+
+def handleTextInput():
+    global userInput
+    if event.key == pygame.K_BACKSPACE:
+        userInput = userInput[:-1]
+    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+        pass
+    else:
+        userInput += event.unicode
+
+
+def checkTermination(event):
+    if event.type == QUIT or (event.type == KEYDOWN and (event.key == K_ESCAPE and not input_active)):
+        quitPygame()
+
+
+def handleAnswerEntered():
+    global answerResult, userInput
+    if answerResult:
+        userInput = ""
+        pygame.event.clear()
+        answerResult = False
+    else:
+        userInput = oldInput
+
+
 while True:
     for event in pygame.event.get():
-        if event.type == QUIT and not input_active:
-            quitPygame()
+        checkTermination(event)
         if event.type == KEYDOWN:
             if event.key == K_RETURN:
-                input_active = not input_active
-                oldInput = userInput[:]
-                answer_result = checkInputAnswer(windowSurface, 6)
-                pygame.time.set_timer(USER_ENTERED_ANSW, 600, True)  # event, time, once?
+                handleAnswer()
         if input_active and event.type == KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                userInput = userInput[:-1]
-            elif event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
-                pass
-            else:
-                userInput += event.unicode
+            handleTextInput()
         if event.type == KEYUP:
-            if event.key == K_ESCAPE and not input_active:
-                quitPygame()
             if event.key == K_ESCAPE and input_active:
                 input_active = not input_active
         if event.type == pygame.MOUSEBUTTONUP:
             if not input_active and UI_ANSWER_RECT.collidepoint(event.pos):
                 input_active = not input_active
-        if event.type == USER_ENTERED_ANSW:
-            if answer_result:
-                userInput = ""
-                pygame.event.clear()
-                answer_result = False
-            else:
-                userInput = oldInput
+        if event.type == USER_ENTERED_ANSWER:
+            handleAnswerEntered()
 
-        windowSurface.fill(BACKGROUND)
-
-        windowSurface.blit(IMAGES_DICT['bg_mountains'], BG_RECT_BACK)
-        windowSurface.blit(IMAGES_DICT['bg_forests'], BG_RECT_FORE)
-        windowSurface.blit(PLAYER_IMAGES['rabbit'], PLAYER_IMAGES['rabbit'].get_rect())
+        drawBackground()
+        windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
         drawSimpleUI(windowSurface)
+
         drawQuestion(windowSurface, "2*3=?")
         drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
         refreshScreen()
