@@ -1,6 +1,8 @@
-import pygame, random, sys, time, os, copy
+import pygame, random, sys, time, os, copy, math_maker
 from pygame.locals import *
 from local_settings import *
+from utils import *
+from entities import *
 
 pygame.init()
 mainClock = pygame.time.Clock()
@@ -20,12 +22,14 @@ UI_LEFT = (WINDOWWIDTH - UI_SIZE[0]) / 2
 UI_QUESTION_RECT = pygame.Rect(UI_LEFT + 5, UI_START + 5, UI_SIZE[0] - 10, UI_SIZE[1] * 1 / 3)
 UI_ANSWER_RECT = pygame.Rect(UI_LEFT + 5, UI_START + UI_START * 1 / 6, UI_SIZE[0] - 10, UI_SIZE[1] * 1 / 3)
 
+
+
 IMAGES_DICT = {
-    'bg_mountains': pygame.transform.scale(pygame.image.load(os.path.join(PATH, 'img', 'country-platform-back.png')),
+    'bg_mountains': pygame.transform.scale(pygame.image.load(getImagePath('country-platform-back.png')),
                                            (WINDOWWIDTH, BG_RECT_BACK.height)),
-    'bg_forests': pygame.transform.scale(pygame.image.load(os.path.join(PATH, 'img', 'country-platform-forest.png')),
+    'bg_forests': pygame.transform.scale(pygame.image.load(getImagePath('country-platform-forest.png')),
                                          (WINDOWWIDTH, BG_RECT_FORE.height)),
-    'rabbit': pygame.transform.scale(pygame.image.load(os.path.join(PATH, 'img', 'player_simple.png')), (40, 40))
+    'rabbit': pygame.transform.scale(pygame.image.load(getImagePath('player_simple.png')), (40, 40))
 }
 
 PLAYER_IMAGES = {
@@ -36,6 +40,7 @@ playerRect = pygame.Rect(10, 400, 40, 40)  # left, top, width, height
 playerImage = pygame.image.load(os.path.join(PATH, 'img', 'player_simple.png'))
 playerStretchedImage = pygame.transform.scale(playerImage, (40, 40))
 
+currentQuestion = math_maker.addition()
 userInput = ""
 oldInput = ""
 input_active = False
@@ -103,10 +108,10 @@ def recordTextInput():
 
 
 def handleAnswer():
-    global input_active, oldInput, answerResult
+    global input_active, oldInput, answerResult, currentQuestion
     input_active = not input_active
     oldInput = userInput[:]
-    answerResult = checkInputAnswer(6)
+    answerResult = checkInputAnswer(currentQuestion[0])
     pygame.time.set_timer(USER_ENTERED_ANSWER, 600, True)  # event, time, once?
 
 
@@ -131,11 +136,32 @@ def handleAnswerEntered():
         userInput = ""
         pygame.event.clear()
         answerResult = False
+        return True
     else:
         userInput = oldInput
+        return False
 
+
+def generateNewQuestion():
+    global currentQuestion
+    currentQuestion = math_maker.addition()
+
+
+# def animate_player(index):
+#     global windowSurface, animation_index
+#     if animation_index > 1:
+#         animation_index = 0
+#     ss = Spritesheet(getImagePath('samurai.png'))
+#     strip = [ss.get_sprite(0, 0, 128, 64),
+#              ss.get_sprite(128, 0, 128, 64)
+#              ]
+#     animation_index = (animation_index + 1) % len(strip)
+#     windowSurface.blit(strip[animation_index], (100, 100))
+
+sprites = pygame.sprite.Group(Player((100,100)))
 
 while True:
+    isCorrect = False
     for event in pygame.event.get():
         checkTermination(event)
         if event.type == KEYDOWN:
@@ -150,12 +176,16 @@ while True:
             if not input_active and UI_ANSWER_RECT.collidepoint(event.pos):
                 input_active = not input_active
         if event.type == USER_ENTERED_ANSWER:
-            handleAnswerEntered()
+            isCorrect = handleAnswerEntered()
+        if isCorrect:
+            generateNewQuestion()
 
         drawBackground()
         windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
         drawSimpleUI(windowSurface)
 
-        drawQuestion(windowSurface, "2*3=?")
+        drawQuestion(windowSurface, currentQuestion[1])
         drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
+        sprites.draw(windowSurface)
+        sprites.update()
         refreshScreen()
