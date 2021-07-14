@@ -55,6 +55,16 @@ def drawText(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgCo
     surface.blit(textObj, textRect)
 
 
+def drawButton(text, fontObj, surface, centerCoordsTuple, textColor=None, textBgColor=None):
+    if textColor is None:
+        textColor = TEXTCOLOR
+    textObj = fontObj.render(text, True, textColor, textBgColor)
+    textRect = textObj.get_rect()
+    textRect.center = centerCoordsTuple
+    surface.blit(textObj, textRect)
+    return textRect
+
+
 def drawSimpleUI(surface):
     pygame.draw.rect(surface, STEELBLUE, ((UI_LEFT, UI_START), UI_SIZE))
     pygame.draw.rect(surface, BLUE, UI_QUESTION_RECT)
@@ -145,51 +155,103 @@ def generateNewQuestion():
     currentQuestion = math_maker.addition()
 
 
-# def animate_player(index):
-#     global windowSurface, animation_index
-#     if animation_index > 1:
-#         animation_index = 0
-#     ss = Spritesheet(getImagePath('samurai.png'))
-#     strip = [ss.get_sprite(0, 0, 128, 64),
-#              ss.get_sprite(128, 0, 128, 64)
-#              ]
-#     animation_index = (animation_index + 1) % len(strip)
-#     windowSurface.blit(strip[animation_index], (100, 100))
+def draw_health_bar(surf, pos, number):
+    heart = pygame.image.load(getImagePath("health_heart.png"))
+    heart = pygame.transform.scale(heart, (20,20))
+    offset = 20
+    for i in range(number):
+        surf.blit(heart, pos)
+        pos = (pos[0]+offset, pos[1])
+
 
 sprites = pygame.sprite.Group(Player((100, 100)))
 
 
-# def runGame():
-#     global input_active
+def runGame():
+    global input_active
+    while True:
+        isCorrect = False
+        for event in pygame.event.get():
+            checkTermination(event)
+            if event.type == KEYDOWN:
+                if event.key == K_RETURN:
+                    handleAnswer()
+            if input_active and event.type == KEYDOWN:
+                handleTextInput(event)
+            if event.type == KEYUP:
+                if event.key == K_ESCAPE and input_active:
+                    input_active = not input_active
+            if event.type == pygame.MOUSEBUTTONUP:
+                if not input_active and UI_ANSWER_RECT.collidepoint(event.pos):
+                    input_active = not input_active
+            if event.type == USER_ENTERED_ANSWER:
+                isCorrect = handleAnswerEntered()
+            if isCorrect:
+                generateNewQuestion()
+
+        drawBackground()
+        windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
+        drawSimpleUI(windowSurface)
+
+        sprites.draw(windowSurface)
+        sprites.update()
+        drawQuestion(windowSurface, currentQuestion[1])
+        drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
+        draw_health_bar(windowSurface,(10, UI_START + 50), 4)
+        refreshScreen()
+
+
+add_but_color = sub_but_color = mult_but_color = div_but_color = BLUE
 while True:
-    isCorrect = False
+    windowSurface.fill(BACKGROUND)
+    mainRect = windowSurface.get_rect()
+    menuRect = pygame.Rect(mainRect.left + 100, mainRect.top + 100, int(mainRect.width * 2 / 3),
+                           int(mainRect.height * 2 / 3))
+    pygame.draw.rect(windowSurface, BLACK, menuRect)
+    drawText("Welcome", font, windowSurface, (mainRect.midtop[0], int(WINDOWHEIGHT * 1 / 5)))
+
+    optionsStart_x = menuRect.midtop[0]
+    optionsStart_y = menuRect.midtop[1] + 100
+    add_rect = drawButton("Addition", font, windowSurface, (optionsStart_x, optionsStart_y), textBgColor=add_but_color)
+    sub_rect = drawButton("Subtraction", font, windowSurface, (optionsStart_x, optionsStart_y + 50),
+                          textBgColor=sub_but_color)
+    mult_rect = drawButton("Multiplication", font, windowSurface, (optionsStart_x, optionsStart_y + 100),
+                           textBgColor=mult_but_color)
+    div_rect = drawButton("Division", font, windowSurface, (optionsStart_x, optionsStart_y + 150),
+                          textBgColor=div_but_color)
+
     for event in pygame.event.get():
         checkTermination(event)
-        if event.type == KEYDOWN:
-            if event.key == K_RETURN:
-                handleAnswer()
-        if input_active and event.type == KEYDOWN:
-            handleTextInput(event)
-        if event.type == KEYUP:
-            if event.key == K_ESCAPE and input_active:
-                input_active = not input_active
+        if event.type == pygame.MOUSEMOTION:
+            if add_rect.collidepoint(event.pos):
+                add_but_color = STEELBLUE
+            else:
+                add_but_color = BLUE
+            if sub_rect.collidepoint(event.pos):
+                sub_but_color = STEELBLUE
+            else:
+                sub_but_color = BLUE
+            if mult_rect.collidepoint(event.pos):
+                mult_but_color = STEELBLUE
+            else:
+                mult_but_color = BLUE
+            if div_rect.collidepoint(event.pos):
+                div_but_color = STEELBLUE
+            else:
+                div_but_color = BLUE
+
         if event.type == pygame.MOUSEBUTTONUP:
-            if not input_active and UI_ANSWER_RECT.collidepoint(event.pos):
-                input_active = not input_active
-        if event.type == USER_ENTERED_ANSWER:
-            isCorrect = handleAnswerEntered()
-        if isCorrect:
-            generateNewQuestion()
+            if add_rect.collidepoint(event.pos):
+                setting = "add"
+                runGame()
+            elif sub_rect.collidepoint(event.pos):
+                setting = "sub"
+                runGame()
+            elif mult_rect.collidepoint(event.pos):
+                setting = "sub"
+                runGame()
+            elif div_rect.collidepoint(event.pos):
+                setting = "sub"
+                runGame()
 
-    drawBackground()
-    windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
-    drawSimpleUI(windowSurface)
-
-    sprites.draw(windowSurface)
-    sprites.update()
-    drawQuestion(windowSurface, currentQuestion[1])
-    drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
     refreshScreen()
-
-
-# runGame()
