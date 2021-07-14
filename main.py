@@ -22,8 +22,6 @@ UI_LEFT = (WINDOWWIDTH - UI_SIZE[0]) / 2
 UI_QUESTION_RECT = pygame.Rect(UI_LEFT + 5, UI_START + 5, UI_SIZE[0] - 10, UI_SIZE[1] * 1 / 3)
 UI_ANSWER_RECT = pygame.Rect(UI_LEFT + 5, UI_START + UI_START * 1 / 6, UI_SIZE[0] - 10, UI_SIZE[1] * 1 / 3)
 
-
-
 IMAGES_DICT = {
     'bg_mountains': pygame.transform.scale(pygame.image.load(getImagePath('country-platform-back.png')),
                                            (WINDOWWIDTH, BG_RECT_BACK.height)),
@@ -88,7 +86,7 @@ def quitPygame():
 
 def refreshScreen():
     pygame.display.update()
-    mainClock.tick(40)
+    mainClock.tick(FPS)
 
 
 def drawBackground():
@@ -115,7 +113,7 @@ def handleAnswer():
     pygame.time.set_timer(USER_ENTERED_ANSWER, 600, True)  # event, time, once?
 
 
-def handleTextInput():
+def handleTextInput(event):
     global userInput
     if event.key == pygame.K_BACKSPACE:
         userInput = userInput[:-1]
@@ -158,8 +156,11 @@ def generateNewQuestion():
 #     animation_index = (animation_index + 1) % len(strip)
 #     windowSurface.blit(strip[animation_index], (100, 100))
 
-sprites = pygame.sprite.Group(Player((100,100)))
+sprites = pygame.sprite.Group(Player((100, 100)))
 
+
+# def runGame():
+#     global input_active
 while True:
     isCorrect = False
     for event in pygame.event.get():
@@ -168,7 +169,7 @@ while True:
             if event.key == K_RETURN:
                 handleAnswer()
         if input_active and event.type == KEYDOWN:
-            handleTextInput()
+            handleTextInput(event)
         if event.type == KEYUP:
             if event.key == K_ESCAPE and input_active:
                 input_active = not input_active
@@ -180,12 +181,15 @@ while True:
         if isCorrect:
             generateNewQuestion()
 
-        drawBackground()
-        windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
-        drawSimpleUI(windowSurface)
+    drawBackground()
+    windowSurface.blit(PLAYER_IMAGES['rabbit'], playerRect)
+    drawSimpleUI(windowSurface)
 
-        drawQuestion(windowSurface, currentQuestion[1])
-        drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
-        sprites.draw(windowSurface)
-        sprites.update()
-        refreshScreen()
+    sprites.draw(windowSurface)
+    sprites.update()
+    drawQuestion(windowSurface, currentQuestion[1])
+    drawText(userInput, font, windowSurface, UI_ANSWER_RECT.center)
+    refreshScreen()
+
+
+# runGame()
